@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TransportTracker</title>
+<style>
+@font-face {
+    font-family: americorpslaser;
+    src: url(font/americorpslaser.ttf);
+}
+
+@font-face {
+    font-family: facon;
+    src: url(font/Facon.ttf);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+  width: 100vw;
+  height: 100vh;
+  background-color: black;
+  /* background-image: url(images/bus_one.jpg); */
+  background-image: url(images/tour_bus.jpg);
+  background-size: cover;
+  background-repeat: no-repeat;
+  margin: 0px;
+  font-family: arial;
+  font-weight: bold;
+  overflow: hidden;
+}
+
+main {
+    width: 100%;
+    height: 100%;
+}
+
+.login-layer {
+    position: absolute;
+    display: grid;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+    grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+    /* grid-template-rows: repeat(3, 1fr); */
+    place-content: center;
+    /* flex-wrap: wrap;
+    flex-flow: column;
+    justify-content: stretch;
+    align-content:stretch; */
+    /* transform: translate(-50%, -50%); */
+}
+
+.name {
+   /* position: absolute;
+   left: 100px;
+   top: 50%; */
+   width: 100%;
+   height: auto;
+   text-align: left;
+   font-size: 4em;
+   /* transform: translateY(-50%); */
+   color: burlywood;
+   font-family: americorpslaser;
+   /* border: 2px solid black; */
+   text-shadow: 3px 3px 5px black;
+   margin: 0px 5px;
+}
+
+form.login {
+    /* position: absolute;
+    top: 50%;
+    left: 50%; */
+    width: 300px;
+    background-color: white;
+    border: 1px solid #c0c0c0;
+    padding: 10px;  
+    font-size: 1.2em; 
+    border-radius: 5px;
+    /* transform: translate(-50%, -50%); */
+    z-index: 10;
+    margin: 0 auto;
+}
+
+form input, form select {
+    width: 100%;
+    margin-bottom: 4px;
+}
+
+form h3 {
+    padding: 4px;
+    margin:0px;
+}
+
+.map-layer form, .map-layer .name {
+    display:none;
+}
+
+main .map-layer-overlay {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100vw;
+    height: 100vh;
+    display: none;
+    pointer-events: none;
+}
+
+main .map-layer-overlay > div {
+    pointer-events: auto;
+    background-color: white;
+}
+
+main.map-layer > .map-layer-overlay {
+    display: block;
+}
+
+.chatter {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    width: 200px;
+    height: 100%;
+    display: grid;
+    grid-template-rows: auto 40px;
+    row-gap: 5px;
+}
+
+.chat-input {
+    background-color:lightgray;
+}
+
+.active-vehicles {
+    position: absolute;
+    left: 0px;
+    bottom: 0px;
+    height: 150px;
+    width: 70%;
+    overflow: auto;
+}
+
+.map {
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    z-index: 0;
+}
+
+#map {
+ position: absolute;
+ width: 100%;
+ height: 100%;
+}
+
+@media screen and (max-width: 419px) {
+  body {
+    background-image: url(images/bus_one.jpg);
+  }
+
+  .login-layer {
+    grid-template-rows: repeat(3, 1fr);
+    justify-content: center;
+  }
+
+  .name {
+    font-size: 3.5em;
+  }
+
+  /* .name {
+    position: absolute;
+    top: 7px;
+    left: 0px;
+    text-align: center;
+    width: 93%;
+    height: auto;
+    transform: translate(0%, 0%);
+    font-size: 42pt;
+  } */
+}
+</style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+    integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI="
+    crossorigin=""/>
+
+<!-- Make sure you put this AFTER Leaflet's CSS -->
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+    integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM="
+    crossorigin=""></script>  
+<script src='https://unpkg.com/leaflet.marker.slideto@0.2.0/Leaflet.Marker.SlideTo.js'></script>
+</head>
+<body>
+<main>
+<div class="login-layer">
+    <div class="name">Transport<br>Tracker</div>
+    <form class="login">
+        <h3>Login - <%= username %></h3>
+        <input type="text" name="user-name" placeholder="Your Name"><br>
+        <input type="email" name="email" placeholder="email@email.com"><br>
+        <select name="roles" id="roles">
+            <option value="0">-- Choose role --</option>
+            <option value="2">Driver</option>
+            <option value="1">Dispatch</option>
+        </select>
+        <br>
+        <input type="submit" value="Submit">
+    </form>
+    <div></div>
+</div>
+<div class="map">
+    <div id="map"></div>
+</div>
+<div class="map-layer-overlay">
+    <div class="chatter">
+        <div class="chat-list"> </div>
+        <div class="chat-input"> </div>
+    </div>
+    <div class="active-vehicles">&nbsp;</div>
+</div>
+</main>
+
+<script>
+
+// document.querySelector('.map-layer-overlay').addEventListener('click', e => {
+//     alert(e.target.className);
+// })
+
+let login = document.querySelector('.login');
+login.addEventListener('submit', e => {
+    e.preventDefault();
+    testLocation();
+    let option = e.target.querySelector('select').value
+    console.log(option)
+    if ( option )
+    {
+        let service;
+        fetch(service)
+        .then(res => res.json())
+        .then( message => {
+
+        })
+        .catch(e => console.log(e))
+    } 
+})
+
+function testLocation()
+{
+    document.querySelector('main').classList.add('map-layer');
+
+// First, create a Leaflet map and add it to the page
+var map = L.map('map').setView([40.663300, -73.892387], 16);
+
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+}).addTo(map);
+
+// Next, create a marker and add it to the map
+var marker = L.marker([40.663300, -73.892387], {
+    icon: L.icon({
+        iconUrl: 'https://simg.nicepng.com/png/small/51-517562_image-set-png-128x128-px-shuttle-bus-icon.png',
+        iconSize: [34, 34],
+        iconAnchor: [16, 37]
+    })
+}).addTo(map);
+
+marker.on('mouseover', function(){
+	this.openPopup();
+});
+
+marker.on('mouseout', function(){
+        this.closePopup();
+});
+
+const coordinates = [
+    [40.663300, -73.892387],
+    [40.663300, -73.892287],
+    [40.663300, -73.892187],
+    [40.663300, -73.892087],
+    [40.663300, -73.891987],
+    [40.663300, -73.891887],
+    [40.663300, -73.891787],
+    [40.663300, -73.891687],
+    [40.663300, -73.891587],
+    [40.663300, -73.891487],
+    [40.663300, -73.891387],
+    [40.663300, -73.891287],
+    [40.663300, -73.891187],
+    [40.663300, -73.891087],
+    [40.663300, -73.890987],
+    [40.663300, -73.890887],
+    [40.663300, -73.890787]
+];
+   let idx = 0;
+   let timer;
+
+// Use the watchPosition method to update the marker's position
+// let watchId = navigator.geolocation.watchPosition( (position) =>  {
+ navigator.geolocation.getCurrentPosition( (position) => {
+    const { latitude, longitude } = position.coords;
+    // var latitude = position.coords.latitude;
+    // var longitude = position.coords.longitude;
+    
+    timer = setInterval( () => {
+    let [ latitude, longitude ] = coordinates[idx++];
+    marker.slideTo([latitude, longitude], {
+	duration: 200,
+	keepAtCenter: true
+    });
+    marker.bindPopup(`<h3>Location:</h3>Lat: ${latitude}<br>Lon: ${longitude}`);
+    console.log(`Updating: ${latitude}, ${longitude}`);
+    if ( idx >= coordinates.length ) clearInterval(timer);
+   }, 200);
+}, errorPos, {
+        enableHighAccuracy: true,
+        timeout: Infinity,
+        maximumAge: 30000
+});
+}
+
+
+function getLocation() 
+{
+  if (navigator.geolocation) 
+  {
+    // navigator.geolocation.getCurrentPosition(assignPosition, errorPos);
+    timer_gps = navigator.geolocation.watchPosition(assignPosition, errorPos, {
+        enableHighAccuracy: true,
+        timeout: Infinity, 
+        maximumAge: 30000
+    });
+    // console.log('timer id: ', timer);
+  } 
+  else 
+  {
+   console.log("Geolocation is not supported by this browser.");
+  }
+}
+
+function assignPosition(position) 
+{
+    // if active-alert active, throttle event
+    // if now - prev < 30 seconds, continue to wait
+
+    myLatitude  = position.coords.latitude; //40.748817; // 40.683071; //  
+    myLongitude = position.coords.longitude; //-73.985428; // -73.976044; //
+    accuracy    = position.coords.accuracy;
+    speed       = position.coords.speed; 
+    // Dagastinos lat/40.735366/lon/-73.979885
+    /*
+    fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${myLatitude}&longitude=${myLongitude}&localityLanguage=en`)
+    .then(resp => resp.json())
+    .then(json => {
+        json.principalSubdivisionCode != 'US-NY' ? 'Service not available in your area.' : 'Available.';
+                // "city": "New York City",
+                // "countryName": "United States of America",
+                // "postcode": "11207",
+                // "countryCode": "US",
+                // "principalSubdivision": "New York",
+                // "principalSubdivisionCode": "US-NY",
+                // "plusCode": "87G8M475+82",
+                // "locality": "Brooklyn",
+    })
+    .catch(err => console.log(err))
+    */
+    console.info('Assigning positions: '+ myLatitude + ', ' + myLongitude);
+    // run();
+    if ( !timer )
+    {
+        run();
+        timer = setInterval(_ => {
+            run();
+        }, 30000);
+    }
+}
+
+function errorPos(err)
+{
+    console.log('ErrorPos...'+ err.code +': '+ err.message);
+    // run();
+}
+
+//This function takes in latitude and longitude of two location and returns the distance between them as the crow flies (in km)
+// function calcGPSDist(lat1, lon1, lat2, lon2) 
+// {
+//     var R = 6371; // km
+//     var dLat =  (lat2-lat1) * Math.PI / 180; // toRad(lat2-lat1); //
+//     var dLon =  (lon2-lon1) * Math.PI / 180; // toRad(lon2-lon1); //
+//     var lat1 =  lat1 * Math.PI / 180; // toRad(lat1); //
+//     var lat2 =  lat2 * Math.PI / 180; // toRad(lat2); //
+
+//     var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+//     Math.sin(dLon/2) * Math.sin(dLon/2) * Math.cos(lat1) * Math.cos(lat2); 
+//     var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+//     var d = R * c;
+//     return d;
+// }
+
+// haversine formula
+function calcGPSDist(lat1, lon1, lat2=40.748817, lon2=-73.985428)
+{
+  var R = 6371; // km
+  var dLat = toRad(lat2 - lat1);
+  var dLon = toRad(lon2 - lon1);
+  var lat1 = toRad(lat1);
+  var lat2 = toRad(lat2);
+
+  var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+  Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(lat1) * Math.cos(lat2);
+  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  var d = R * c;
+  return d;
+}
+
+// Converts numeric degrees to radians
+function toRad(Value)
+{
+  return Value * Math.PI / 180;
+}
+
+</script>
+</body>
+</html>

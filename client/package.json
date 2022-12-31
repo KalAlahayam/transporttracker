@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "kalman-filter": "^1.11.1"
+  }
+}
